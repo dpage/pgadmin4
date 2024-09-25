@@ -218,3 +218,5 @@ VOLUME /var/lib/pgadmin
 EXPOSE 80 443
 
 ENTRYPOINT ["/entrypoint.sh"]
+ARG APP_RELEASE
+LABEL org.opencontainers.image.source="https://github.com/dpage/pgadmin4/" org.opencontainers.image.revision=${APP_RELEASE}
