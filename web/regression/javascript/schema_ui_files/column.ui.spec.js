@@ -152,6 +152,27 @@ describe('ColumnSchema', ()=>{
     expect(schemaObj.editableCheckForTable(state)).toBe(false);
   });
 
+  it('attlen/attprecision editable - column already inherited from a parent table (inheritedfromtable only)', ()=>{
+    // A loaded row can carry only inheritedfromtable, with no
+    // inheritedfrom (issue #10179, case 1). The attlen/attprecision
+    // editable checks must honour that case too, not just the
+    // interactively-added 'inheritedfrom' case.
+    schemaObj.datatypes = datatypes;
+    let attlenField = _.find(schemaObj.fields, (f)=>f.id === 'attlen');
+    let attprecisionField = _.find(schemaObj.fields, (f)=>f.id === 'attprecision');
+
+    let varcharState = {cltype: 'character varying', inheritedfromtable: 'public.parent'};
+    expect(attlenField.editable(varcharState)).toBe(false);
+
+    let numericState = {cltype: 'numeric', inheritedfromtable: 'public.parent'};
+    expect(attprecisionField.editable(numericState)).toBe(false);
+
+    // Sanity check: without inheritance, they remain editable when the
+    // data type supports length/precision.
+    expect(attlenField.editable({cltype: 'character varying'})).toBe(true);
+    expect(attprecisionField.editable({cltype: 'numeric'})).toBe(true);
+  });
+
   it('editTypesFilter', ()=>{
     let options = [
       {label: 'integer', value: 'integer'},

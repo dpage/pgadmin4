@@ -97,8 +97,7 @@ export default class ColumnSchema extends BaseUISchema {
       // checked before the isNew() check below, as interactively added
       // inherited columns don't carry an attnum yet and would otherwise be
       // (wrongly) treated as new, editable rows.
-      if (!isEmptyString(state.inheritedfrom) ||
-          !isEmptyString(state.inheritedfromtable)){
+      if (this.isInheritedColumn(state)) {
         return true;
       }
 
@@ -169,6 +168,17 @@ export default class ColumnSchema extends BaseUISchema {
 
   isInheritedFromType(state) {
     return !isEmptyString(state.inheritedfromtype);
+  }
+
+  // A column inherited from a parent table should be treated as read-only,
+  // whether it was already present when the table was opened
+  // (inheritedfromtable, set on the properties fetch) or was just added
+  // interactively via 'Inherited from table(s)' (inheritedfrom, set on the
+  // freshly fetched column). Shared by any editable/disabled check that
+  // needs to special-case inherited columns.
+  isInheritedColumn(state) {
+    return !isEmptyString(state.inheritedfrom) ||
+      !isEmptyString(state.inheritedfromtable);
   }
 
   // Shared by the inline grid-cell 'Data type' editor and the expanded
@@ -387,8 +397,8 @@ export default class ColumnSchema extends BaseUISchema {
         return !obj.attlenRange(state);
       },
       editable: function(state) {
-        // inheritedfrom has value then we should disable it
-        if (!isEmptyString(state.inheritedfrom)) {
+        // A column inherited from a parent table should stay read-only.
+        if (obj.isInheritedColumn(state)) {
           return false;
         }
         return Boolean(obj.attlenRange(state));
@@ -419,11 +429,11 @@ export default class ColumnSchema extends BaseUISchema {
         return !this.attprecisionRange(state);
       },
       editable: function(state) {
-        // inheritedfrom has value then we should disable it
-        if (!isEmptyString(state.inheritedfrom)) {
+        // A column inherited from a parent table should stay read-only.
+        if (obj.isInheritedColumn(state)) {
           return false;
         }
-        return Boolean(this.attprecisionRange(state));
+        return Boolean(obj.attprecisionRange(state));
       },
     },{
       id: 'min_val_attprecision', skipChange: true, visible: false, type: '',
