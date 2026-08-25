@@ -143,7 +143,7 @@ class FunctionGetmsqlTestCase(BaseTestGenerator):
             )
         ),
         (
-            'Fetch Function msql with newly added argument is rejected',
+            'Fetch Function msql with newly added IN argument is rejected',
             dict(
                 url='/browser/function/msql/',
                 is_positive_test=True,
@@ -161,7 +161,7 @@ class FunctionGetmsqlTestCase(BaseTestGenerator):
                     "variables": [],
                     "seclabels": [],
                     "acl": [],
-                    # PostgreSQL cannot add an argument to an existing
+                    # PostgreSQL cannot add an IN argument to an existing
                     # function via CREATE OR REPLACE (it would create a
                     # separate, overloaded routine instead), so this must
                     # be rejected with a clear error rather than silently
@@ -178,7 +178,48 @@ class FunctionGetmsqlTestCase(BaseTestGenerator):
                 mock_data={},
                 expected_data={
                     "status_code": 500,
-                    "check_errormsg": "not supported"
+                    "check_errormsg": "overloaded"
+                }
+            ),
+        ),
+        (
+            'Fetch Function msql with newly added OUT argument is '
+            'rejected',
+            dict(
+                url='/browser/function/msql/',
+                is_positive_test=True,
+                mocking_required=False,
+                with_function_id=True,
+                is_mock_local_function=False,
+                test_data={
+                    "name": "Test Function",
+                    "funcowner": "",
+                    "pronamespace": 2200,
+                    "prorettypename": "character varying",
+                    "lanname": "sql",
+                    "prosrc": "select '1'",
+                    "probin": "$libdir/",
+                    "variables": [],
+                    "seclabels": [],
+                    "acl": [],
+                    # Unlike an added IN/INOUT/VARIADIC argument, an added
+                    # OUT argument does not change the function's
+                    # identity/signature, but it does change the shape of
+                    # the returned row, which PostgreSQL rejects outright
+                    # (SQLSTATE 42P13). This must be rejected with a
+                    # distinct, accurate error message.
+                    "arguments": json.dumps({
+                        "added": [{
+                            "argname": "new_out_arg",
+                            "argtype": "integer",
+                            "argmode": "OUT"
+                        }]
+                    })
+                },
+                mock_data={},
+                expected_data={
+                    "status_code": 500,
+                    "check_errormsg": "returned row"
                 }
             ),
         ),
