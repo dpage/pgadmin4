@@ -54,8 +54,8 @@ REM Main build sequence Ends
 :SET_ENVIRONMENT
     ECHO Configuring the environment...
     IF "%PGADMIN_PYTHON_DIR%" == ""   SET "PGADMIN_PYTHON_DIR=C:\Python314"
-    IF "%PGADMIN_KRB5_DIR%" == ""     SET "PGADMIN_KRB5_DIR=C:\Program Files\MIT\Kerberos"
-    IF "%PGADMIN_POSTGRES_DIR%" == "" SET "PGADMIN_POSTGRES_DIR=C:\Program Files\PostgreSQL\17"
+    IF "%PGADMIN_KRB5_DIR%" == ""     SET "PGADMIN_KRB5_DIR=C:\build64\krb5"
+    IF "%PGADMIN_POSTGRES_DIR%" == "" SET "PGADMIN_POSTGRES_DIR=C:\build64\postgresql"
     IF "%PGADMIN_INNOTOOL_DIR%" == "" SET "PGADMIN_INNOTOOL_DIR=C:\Program Files (x86)\Inno Setup 6"
     IF "%PGADMIN_VCREDIST_DIR%" == "" SET "PGADMIN_VCREDIST_DIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.40.33807"
     IF "%PGADMIN_VCREDIST_FILE%" == "" SET "PGADMIN_VCREDIST_FILE=vc_redist.x64.exe"
@@ -128,7 +128,8 @@ REM Main build sequence Ends
 
     IF NOT EXIST "%PGADMIN_KRB5_DIR%" (
         ECHO !PGADMIN_KRB5_DIR! does not exist.
-        ECHO Please install MIT Kerberos for Windows and set the PGADMIN_KRB5_DIR environment variable.
+        ECHO Please install MIT Kerberos for Windows, from the winpgbuild project or
+        ECHO elsewhere, and set the PGADMIN_KRB5_DIR environment variable.
         EXIT /B 1
     )
 
@@ -140,7 +141,8 @@ REM Main build sequence Ends
 
     IF NOT EXIST "%PGADMIN_POSTGRES_DIR%" (
         ECHO !PGADMIN_POSTGRES_DIR! does not exist.
-        ECHO Please install PostgreSQL and set the PGADMIN_POSTGRES_DIR environment variable.
+        ECHO Please install PostgreSQL, from the winpgbuild project or elsewhere, and
+        ECHO set the PGADMIN_POSTGRES_DIR environment variable.
         EXIT /B 1
     )
 
