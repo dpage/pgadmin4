@@ -334,6 +334,14 @@ REM Main build sequence Ends
     IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" "%BUILDROOT%\runtime" > nul
     IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" "%BUILDROOT%\runtime" > nul
     COPY "%PGADMIN_POSTGRES_DIR%\bin\zlib1.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    REM From PostgreSQL 18, libpq is built with gssapi support and loads the
+    REM Kerberos libraries below. They are absent from earlier builds.
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" "%BUILDROOT%\runtime" > nul
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dump.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dumpall.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
@@ -440,7 +448,7 @@ REM and some of them are optional.
 
     SETLOCAL EnableDelayedExpansion
     SET "COMPONENTS="
-    FOR %%p IN (pgAdmin4.exe libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
+    FOR %%p IN (pgAdmin4.exe libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll gssapi64.dll krb5_64.dll comerr64.dll k5sprt64.dll krbcc64.dll xpprof64.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
         FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO SET "COMPONENTS=!COMPONENTS! "%BUILDROOT%\runtime\%%f""
     )
     FOR %%p IN (kinit.exe krb5_64.dll comerr64.dll k5sprt64.dll gssapi64.dll) DO (
