@@ -26,6 +26,7 @@ CALL :CLEAN || EXIT /B 1
 CALL :CREATE_VIRTUAL_ENV || EXIT /B 1
 CALL :CREATE_PYTHON_ENV || EXIT /B 1
 CALL :CREATE_RUNTIME_ENV || EXIT /B 1
+CALL :SIGN_COMPONENTS || EXIT /B 1
 CALL :GENERATE_SBOM || EXIT /B 1
 CALL :CREATE_INSTALLER || EXIT /B 1
 CALL :VERIFY_SIGNATURE || EXIT /B 1
@@ -322,13 +323,6 @@ REM Main build sequence Ends
     %TMPDIR%\rcedit-x64.exe "%BUILDROOT%\runtime\pgAdmin4.exe" --set-version-string "ProductName" "%APP_NAME%"
     %TMPDIR%\rcedit-x64.exe "%BUILDROOT%\runtime\pgAdmin4.exe" --set-product-version "%APP_VERSION%"
 
-    IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
-        ECHO Attempting to sign the pgAdmin4.exe...
-        CALL :SIGN_FILES "%BUILDROOT%\runtime\pgAdmin4.exe" || EXIT /B 1
-    ) ELSE (
-        ECHO Skipping code signing ^(PGADMIN_WINDOWS_CSC is not set^)...
-    )
-
     ECHO Staging PostgreSQL components...
     COPY "%PGADMIN_POSTGRES_DIR%\bin\libpq.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\libcrypto-*-x64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
@@ -342,8 +336,6 @@ REM Main build sequence Ends
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dumpall.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\psql.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
-
-    CALL :SIGN_POSTGRES_COMPONENTS || EXIT /B 1
 
     ECHO Staging VC++ runtime...
     MKDIR "%BUILDROOT%\installer" || EXIT /B 1
@@ -429,31 +421,38 @@ REM first signature of a session.
 
     EXIT /B 0
 
-REM Sign the PostgreSQL utilities and libraries staged in the runtime
-REM directory. The library names are matched as patterns as they include
-REM version numbers, and some of them are optional.
-:SIGN_POSTGRES_COMPONENTS
+REM Sign the components that we build ourselves: the runtime executable, and
+REM the PostgreSQL and Kerberos utilities and libraries obtained from the
+REM winpgbuild project. The Electron, Python and VC++ runtime components are
+REM deliberately left alone, as they are third party binaries that we do not
+REM build, and signing them would replace any signature of their own. Names
+REM are matched as patterns as some of the libraries include version numbers,
+REM and some of them are optional.
+:SIGN_COMPONENTS
     IF "%PGADMIN_WINDOWS_CSC%" == "" (
-        ECHO Skipping code signing of the PostgreSQL components ^(PGADMIN_WINDOWS_CSC is not set^)...
+        ECHO Skipping code signing ^(PGADMIN_WINDOWS_CSC is not set^)...
         EXIT /B 0
     )
 
-    ECHO Attempting to sign the PostgreSQL components...
+    ECHO Attempting to sign the pgAdmin, PostgreSQL and Kerberos components...
 
     SETLOCAL EnableDelayedExpansion
-    SET "PG_COMPONENTS="
-    FOR %%p IN (libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
-        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO SET "PG_COMPONENTS=!PG_COMPONENTS! "%BUILDROOT%\runtime\%%f""
+    SET "COMPONENTS="
+    FOR %%p IN (pgAdmin4.exe libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
+        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO SET "COMPONENTS=!COMPONENTS! "%BUILDROOT%\runtime\%%f""
     )
-    IF "!PG_COMPONENTS!" == "" (
+    FOR %%p IN (kinit.exe krb5_64.dll comerr64.dll k5sprt64.dll gssapi64.dll) DO (
+        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\python\%%p" 2^>nul') DO SET "COMPONENTS=!COMPONENTS! "%BUILDROOT%\python\%%f""
+    )
+    IF "!COMPONENTS!" == "" (
         ECHO.
         ECHO ************************************************************
-        ECHO * No PostgreSQL components were found to sign
+        ECHO * No components were found to sign
         ECHO ************************************************************
         ENDLOCAL
         EXIT /B 1
     )
-    CALL :SIGN_FILES !PG_COMPONENTS! || EXIT /B 1
+    CALL :SIGN_FILES !COMPONENTS! || EXIT /B 1
     ENDLOCAL
 
     EXIT /B 0
