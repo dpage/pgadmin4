@@ -324,7 +324,7 @@ REM Main build sequence Ends
 
     IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
         ECHO Attempting to sign the pgAdmin4.exe...
-        CALL :SIGN_FILES "%BUILDROOT%\runtime\pgAdmin4.exe"
+        CALL :SIGN_FILES "%BUILDROOT%\runtime\pgAdmin4.exe" || EXIT /B 1
     ) ELSE (
         ECHO Skipping code signing ^(PGADMIN_WINDOWS_CSC is not set^)...
     )
@@ -343,7 +343,7 @@ REM Main build sequence Ends
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\psql.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
 
-    CALL :SIGN_POSTGRES_COMPONENTS
+    CALL :SIGN_POSTGRES_COMPONENTS || EXIT /B 1
 
     ECHO Staging VC++ runtime...
     MKDIR "%BUILDROOT%\installer" || EXIT /B 1
@@ -406,7 +406,7 @@ REM Main build sequence Ends
         ECHO ************************************************************
         ECHO * Failed to verify signature of the installer
         ECHO ************************************************************
-        PAUSE
+        EXIT /B 1
     )
 
     EXIT /B 0
@@ -424,7 +424,7 @@ REM first signature of a session.
         ECHO ************************************************************
         ECHO * Failed to sign one or more files
         ECHO ************************************************************
-        PAUSE
+        EXIT /B 1
     )
 
     EXIT /B 0
@@ -453,7 +453,7 @@ REM version numbers, and some of them are optional.
         ENDLOCAL
         EXIT /B 1
     )
-    CALL :SIGN_FILES !PG_COMPONENTS!
+    CALL :SIGN_FILES !PG_COMPONENTS! || EXIT /B 1
     ENDLOCAL
 
     EXIT /B 0
