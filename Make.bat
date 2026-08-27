@@ -324,14 +324,7 @@ REM Main build sequence Ends
 
     IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
         ECHO Attempting to sign the pgAdmin4.exe...
-        CALL "%PGADMIN_SIGNTOOL_DIR%\signtool.exe" sign /sm /n "%PGADMIN_WINDOWS_CSC%" /tr http://timestamp.digicert.com /td sha256 /fd sha1 /v "%BUILDROOT%\runtime\pgAdmin4.exe"
-        IF %ERRORLEVEL% NEQ 0 (
-            ECHO.
-            ECHO ************************************************************
-            ECHO * Failed to sign the pgAdmin4.exe
-            ECHO ************************************************************
-            PAUSE
-        )
+        CALL :SIGN_FILE "%BUILDROOT%\runtime\pgAdmin4.exe"
     ) ELSE (
         ECHO Skipping code signing ^(PGADMIN_WINDOWS_CSC is not set^)...
     )
@@ -346,9 +339,18 @@ REM Main build sequence Ends
     IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" "%BUILDROOT%\runtime" > nul
     COPY "%PGADMIN_POSTGRES_DIR%\bin\zlib1.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dump.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
-    COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dumpall.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1L%
+    COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dumpall.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\psql.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+
+    IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
+        ECHO Attempting to sign the PostgreSQL components...
+    ) ELSE (
+        ECHO Skipping code signing of the PostgreSQL components ^(PGADMIN_WINDOWS_CSC is not set^)...
+    )
+    FOR %%p IN (libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
+        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO CALL :SIGN_FILE "%BUILDROOT%\runtime\%%f"
+    )
 
     ECHO Staging VC++ runtime...
     MKDIR "%BUILDROOT%\installer" || EXIT /B 1
@@ -416,6 +418,20 @@ REM Main build sequence Ends
 
     EXIT /B 0
 
+
+:SIGN_FILE
+    IF "%PGADMIN_WINDOWS_CSC%" == "" EXIT /B 0
+
+    CALL "%PGADMIN_SIGNTOOL_DIR%\signtool.exe" sign /sm /n "%PGADMIN_WINDOWS_CSC%" /tr http://timestamp.digicert.com /td sha256 /fd sha1 /v %1
+    IF %ERRORLEVEL% NEQ 0 (
+        ECHO.
+        ECHO ************************************************************
+        ECHO * Failed to sign %~nx1
+        ECHO ************************************************************
+        PAUSE
+    )
+
+    EXIT /B 0
 
 :USAGE
     ECHO Invalid command line options.
