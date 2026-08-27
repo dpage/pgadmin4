@@ -161,8 +161,11 @@ PostgreSQL binaries from the
 [winpgbuild project](https://github.com/dpage/winpgbuild/releases). Download the
 `postgresql-<version>-latest.zip` asset for the version of PostgreSQL you wish
 to use, along with `krb5-latest.zip`, and unpack both of them into `C:\build64`.
-MIT Kerberos is built and packaged separately because the PostgreSQL build
-doesn't include Kerberos (gssapi) support, as it uses native SSPI instead.
+MIT Kerberos is packaged separately and is needed in addition to the PostgreSQL
+binaries, as pgAdmin ships `kinit` and the Kerberos runtime libraries to support
+Kerberos authentication of its own. Note that PostgreSQL 17 and earlier are
+built without gssapi support on Windows, which cannot be enabled alongside
+OpenSSL before PostgreSQL 18.
 
 That will leave you with `C:\build64\postgresql` and `C:\build64\krb5`, which are
 the directories the build system looks in by default. The same binaries are also
