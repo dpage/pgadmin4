@@ -324,7 +324,7 @@ REM Main build sequence Ends
 
     IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
         ECHO Attempting to sign the pgAdmin4.exe...
-        CALL :SIGN_FILE "%BUILDROOT%\runtime\pgAdmin4.exe"
+        CALL :SIGN_FILES "%BUILDROOT%\runtime\pgAdmin4.exe"
     ) ELSE (
         ECHO Skipping code signing ^(PGADMIN_WINDOWS_CSC is not set^)...
     )
@@ -343,14 +343,7 @@ REM Main build sequence Ends
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\psql.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
 
-    IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
-        ECHO Attempting to sign the PostgreSQL components...
-    ) ELSE (
-        ECHO Skipping code signing of the PostgreSQL components ^(PGADMIN_WINDOWS_CSC is not set^)...
-    )
-    FOR %%p IN (libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
-        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO CALL :SIGN_FILE "%BUILDROOT%\runtime\%%f"
-    )
+    CALL :SIGN_POSTGRES_COMPONENTS
 
     ECHO Staging VC++ runtime...
     MKDIR "%BUILDROOT%\installer" || EXIT /B 1
@@ -379,7 +372,7 @@ REM Main build sequence Ends
 
     ECHO Creating windows installer using INNO tool...
     IF NOT "%PGADMIN_WINDOWS_CSC%" == "" (
-        CALL "%PGADMIN_INNOTOOL_DIR%\ISCC.exe" "%WD%\pkg\win32\installer.iss" "/SpgAdminSigntool=%PGADMIN_SIGNTOOL_DIR%\signtool.exe sign /sm /n $q%PGADMIN_WINDOWS_CSC%$q /tr http://timestamp.digicert.com /td sha256 /fd sha1 /v $f" || EXIT /B 1
+        CALL "%PGADMIN_INNOTOOL_DIR%\ISCC.exe" "%WD%\pkg\win32\installer.iss" "/SpgAdminSigntool=%PGADMIN_SIGNTOOL_DIR%\signtool.exe sign /sm /n $q%PGADMIN_WINDOWS_CSC%$q /tr http://timestamp.digicert.com /td sha256 /fd sha256 /v $f" || EXIT /B 1
     ) ELSE (
         CALL "%PGADMIN_INNOTOOL_DIR%\ISCC.exe" "%WD%\pkg\win32\installer.iss" || EXIT /B 1
     )
@@ -419,17 +412,49 @@ REM Main build sequence Ends
     EXIT /B 0
 
 
-:SIGN_FILE
+REM Sign one or more files, passed as quoted arguments. Signing is done in a
+REM single signtool invocation as the hardware token prompts for a PIN on the
+REM first signature of a session.
+:SIGN_FILES
     IF "%PGADMIN_WINDOWS_CSC%" == "" EXIT /B 0
 
-    CALL "%PGADMIN_SIGNTOOL_DIR%\signtool.exe" sign /sm /n "%PGADMIN_WINDOWS_CSC%" /tr http://timestamp.digicert.com /td sha256 /fd sha1 /v %1
+    CALL "%PGADMIN_SIGNTOOL_DIR%\signtool.exe" sign /sm /n "%PGADMIN_WINDOWS_CSC%" /tr http://timestamp.digicert.com /td sha256 /fd sha256 /v %*
     IF %ERRORLEVEL% NEQ 0 (
         ECHO.
         ECHO ************************************************************
-        ECHO * Failed to sign %~nx1
+        ECHO * Failed to sign one or more files
         ECHO ************************************************************
         PAUSE
     )
+
+    EXIT /B 0
+
+REM Sign the PostgreSQL utilities and libraries staged in the runtime
+REM directory. The library names are matched as patterns as they include
+REM version numbers, and some of them are optional.
+:SIGN_POSTGRES_COMPONENTS
+    IF "%PGADMIN_WINDOWS_CSC%" == "" (
+        ECHO Skipping code signing of the PostgreSQL components ^(PGADMIN_WINDOWS_CSC is not set^)...
+        EXIT /B 0
+    )
+
+    ECHO Attempting to sign the PostgreSQL components...
+
+    SETLOCAL EnableDelayedExpansion
+    SET "PG_COMPONENTS="
+    FOR %%p IN (libpq.dll libcrypto-*-x64.dll libssl-*-x64.dll libintl-*.dll libiconv-*.dll liblz4.dll libzstd.dll zlib1.dll pg_dump.exe pg_dumpall.exe pg_restore.exe psql.exe) DO (
+        FOR /F "delims=" %%f IN ('DIR /B "%BUILDROOT%\runtime\%%p" 2^>nul') DO SET "PG_COMPONENTS=!PG_COMPONENTS! "%BUILDROOT%\runtime\%%f""
+    )
+    IF "!PG_COMPONENTS!" == "" (
+        ECHO.
+        ECHO ************************************************************
+        ECHO * No PostgreSQL components were found to sign
+        ECHO ************************************************************
+        ENDLOCAL
+        EXIT /B 1
+    )
+    CALL :SIGN_FILES !PG_COMPONENTS!
+    ENDLOCAL
 
     EXIT /B 0
 
