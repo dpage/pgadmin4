@@ -540,7 +540,10 @@ class SequenceView(PGChildNodeView, SchemaDiffObjectCompare):
         Returns:
 
         """
-        data = request.form if request.form else json.loads(
+        # request.form is immutable, and get_SQL adds a 'restart' of its
+        # own when the new bounds have left the sequence outside them, so
+        # take a mutable copy of it.
+        data = dict(request.form) if request.form else json.loads(
             request.data
         )
         sql, _ = self.get_SQL(gid, sid, did, data, scid, seid)

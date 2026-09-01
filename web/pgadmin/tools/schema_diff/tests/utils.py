@@ -106,13 +106,19 @@ def apply_sql_chunks(server, db_name, chunks):
     while pending:
         failed = []
         for label, sql in pending:
+            pg_cursor = None
             try:
                 pg_cursor = connection.cursor()
                 pg_cursor.execute(sql)
-                pg_cursor.close()
                 applied.append(label)
             except Exception as e:
                 failed.append((label, sql, str(e)))
+            finally:
+                # A statement that failed is retried on the next pass, so
+                # leaving its cursor open would accumulate one per attempt
+                # for the length of the run.
+                if pg_cursor is not None:
+                    pg_cursor.close()
 
         if len(failed) == len(pending):
             connection.close()
