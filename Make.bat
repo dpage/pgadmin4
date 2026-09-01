@@ -329,19 +329,39 @@ REM Main build sequence Ends
     COPY "%PGADMIN_POSTGRES_DIR%\bin\libpq.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\libcrypto-*-x64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\libssl-*-x64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libintl-*.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\libintl-*.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libiconv-*.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\libiconv-*.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libintl-*.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\libintl-*.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libiconv-*.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\libiconv-*.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\liblz4.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\libzstd.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
     COPY "%PGADMIN_POSTGRES_DIR%\bin\zlib1.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     REM From PostgreSQL 18, libpq is built with gssapi support and loads the
     REM Kerberos libraries below. They are absent from earlier builds.
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" "%BUILDROOT%\runtime" > nul
-    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" COPY "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" "%BUILDROOT%\runtime" > nul
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\gssapi64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\krb5_64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\comerr64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\k5sprt64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\krbcc64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
+    IF EXIST "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" (
+        COPY "%PGADMIN_POSTGRES_DIR%\bin\xpprof64.dll" "%BUILDROOT%\runtime" > nul || EXIT /B 1
+    )
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dump.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_dumpall.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
     COPY "%PGADMIN_POSTGRES_DIR%\bin\pg_restore.exe" "%BUILDROOT%\runtime" > nul || EXIT /B 1
