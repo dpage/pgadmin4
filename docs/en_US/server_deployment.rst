@@ -331,6 +331,15 @@ And configure Caddy:
         reverse_proxy unix//tmp/pgadmin4.sock
     }
 
+.. note:: The systemd unit shipped with Caddy sets ``PrivateTmp=true``, which
+    gives the Caddy process a private ``/tmp`` directory of its own. A socket
+    created by Gunicorn or uWSGI in the system ``/tmp`` is therefore invisible
+    to Caddy, which will report a 502 error for every request. Place the
+    socket in a directory outside ``/tmp`` that both processes can access, for
+    example ``/run/pgadmin4/``, ensuring that the user Caddy runs as has
+    permission to read and write it; alternatively, have Gunicorn or uWSGI
+    listen on a TCP port such as ``127.0.0.1:5050`` and proxy to that instead.
+
 Alternatively, pgAdmin can be hosted in a sub-directory (/pgadmin4 in this
 case) on the server. Start Gunicorn as when using the root directory, but
 also set the ``SCRIPT_NAME`` environment variable for the Gunicorn process,
